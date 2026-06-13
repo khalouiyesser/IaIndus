@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DSL Agent — Data Sigma Lean 4.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --navy:#0F1E35;--blue:#1B6FD8;--cyan:#00C6FF;--green:#00B87A;
+    --orange:#E8620A;--red:#D63B3B;--purple:#8040B0;
+    --bg:#080E1A;--card:#0D1929;--card2:#111E30;
+    --border:#1A2F4A;--text:#E2EAF4;--muted:#607898;
+    --font:'Space Grotesk',sans-serif;--mono:'JetBrains Mono',monospace;
+  }
+  body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px}
+  .app{min-height:100vh;display:flex;flex-direction:column}
+
+  .hdr{background:linear-gradient(135deg,#0A1628,#0F2040,#0A1628);
+    border-bottom:1px solid var(--border);padding:14px 24px;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo-icon{width:40px;height:40px;border-radius:9px;
+    background:linear-gradient(135deg,var(--blue),var(--cyan));
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;color:#fff;font-family:var(--mono);
+    box-shadow:0 0 18px rgba(27,111,216,0.4)}
+  .logo-name{font-size:17px;font-weight:700;letter-spacing:-0.3px}
+  .logo-name span{color:var(--cyan)}
+  .logo-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-top:1px}
+  .badges{display:flex;gap:7px;flex-wrap:wrap}
+  .badge{padding:3px 9px;border-radius:12px;font-size:10px;font-weight:600;letter-spacing:0.5px;font-family:var(--mono)}
+  .b-blue{background:rgba(27,111,216,0.15);color:var(--cyan);border:1px solid rgba(27,111,216,0.3)}
+  .b-green{background:rgba(0,184,122,0.12);color:var(--green);border:1px solid rgba(0,184,122,0.25)}
+  .b-orange{background:rgba(232,98,10,0.15);color:var(--orange);border:1px solid rgba(232,98,10,0.3)}
+  .b-red{background:rgba(214,59,59,0.15);color:#E07070;border:1px solid rgba(214,59,59,0.3)}
+
+  .main{flex:1;display:grid;grid-template-columns:430px 1fr}
+  @media(max-width:980px){.main{grid-template-columns:1fr}}
+  .lpanel{padding:20px;border-right:1px solid var(--border);overflow-y:auto;max-height:calc(100vh - 78px)}
+  .rpanel{padding:20px;overflow-y:auto;max-height:calc(100vh - 78px)}
+  @media(max-width:980px){.lpanel,.rpanel{max-height:none}}
+
+  .stitle{font-size:10px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;
+    color:var(--muted);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .stitle::after{content:'';flex:1;height:1px;background:var(--border)}
+
+  .dcards{display:flex;gap:8px;margin-bottom:16px}
+  .dcard{flex:1;padding:10px 8px;border-radius:8px;border:2px solid var(--border);
+    background:var(--card);cursor:pointer;transition:all 0.15s;text-align:center}
+  .dcard:hover{border-color:var(--blue)}
+  .dcard.active{border-color:var(--cyan);background:rgba(0,198,255,0.06)}
+  .dcard .di{font-size:18px;margin-bottom:4px}
+  .dcard .dt{font-size:11px;font-weight:600}
+  .dcard .ds{font-size:9px;color:var(--muted);margin-top:2px}
+
+  .kstrip{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+  .kbox{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+  .kv{font-size:18px;font-weight:700;font-family:var(--mono)}
+  .kv.red{color:var(--red)}.kv.orange{color:var(--orange)}.kv.yellow{color:#E8C030}.kv.cyan{color:var(--cyan)}
+  .kn{font-size:9px;color:var(--muted);margin-top:2px;font-weight:600}
+
+  .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .fg{display:flex;flex-direction:column;gap:4px}
+  .fg.full{grid-column:1/-1}
+  .fl{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:0.8px;text-transform:uppercase}
+  .fi,.fs,.ft{background:var(--card2);border:1px solid var(--border);border-radius:6px;
+    padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;
+    transition:border-color 0.15s;outline:none;width:100%}
+  .fi:focus,.fs:focus,.ft:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(27,111,216,0.1)}
+  .fs option{background:var(--navy)}
+  .ft{resize:vertical;min-height:60px}
+
+  .btn{width:100%;padding:11px;border-radius:8px;border:none;
+    background:linear-gradient(135deg,var(--blue),#0948A0);
+    color:#fff;font-size:13px;font-weight:700;cursor:pointer;margin-top:14px;
+    transition:all 0.15s;box-shadow:0 3px 14px rgba(27,111,216,0.3)}
+  .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 5px 20px rgba(27,111,216,0.45)}
+  .btn:disabled{opacity:0.55;cursor:not-allowed;transform:none}
+  .btn.ghost{background:transparent;border:1px solid var(--border);color:var(--cyan);box-shadow:none;margin-top:8px}
+  .btn.ghost:hover:not(:disabled){border-color:var(--cyan);background:rgba(0,198,255,0.06)}
+
+  .empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+    height:100%;min-height:400px;text-align:center;gap:14px}
+  .empty-icon{font-size:42px;opacity:0.2}
+  .empty p{color:var(--muted);font-size:13px;max-width:280px;line-height:1.7}
+
+  .a3-report{animation:fi 0.4s ease}
+  @keyframes fi{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .a3-hdr{background:linear-gradient(135deg,rgba(27,111,216,0.15),rgba(0,198,255,0.06));
+    border:1px solid rgba(27,111,216,0.25);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+  .a3-hdr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;gap:12px}
+  .a3-hdr h2{font-size:15px;font-weight:700;margin-bottom:3px}
+  .a3-hdr p{font-size:11px;color:var(--muted);line-height:1.5}
+  .sigma-badge{text-align:right;flex-shrink:0}
+  .sigma-val{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--orange)}
+  .sigma-lbl{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  .a3-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .a3-meta-item{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:6px;padding:6px 10px}
+  .a3-meta-item .ml{font-size:9px;color:var(--muted);letter-spacing:0.5px;text-transform:uppercase;margin-bottom:2px}
+  .a3-meta-item .mv{font-size:11px;font-weight:600}
+
+  .a3-section{margin-bottom:10px;border-radius:10px;overflow:hidden;border:1px solid var(--border)}
+  .a3-sec-hdr{padding:9px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:opacity 0.15s}
+  .a3-sec-hdr:hover{opacity:0.85}
+  .a3-sec-num{width:42px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:11px;font-family:var(--mono);color:#fff;flex-shrink:0}
+  .a3-sec-label{font-weight:600;font-size:12px;flex:1}
+  .a3-sec-phase{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:600;letter-spacing:0.5px;font-family:var(--mono)}
+  .a3-chev{color:var(--muted);font-size:10px;transition:transform 0.15s}
+  .a3-chev.open{transform:rotate(180deg)}
+  .a3-sec-body{padding:14px;background:rgba(255,255,255,0.02);font-size:12px;line-height:1.75;
+    color:var(--text);border-top:1px solid var(--border);white-space:pre-wrap}
+
+  .plan-hdr{background:rgba(27,111,216,0.12)}   .plan-num{background:#1B6FD8}   .plan-ph{background:rgba(27,111,216,0.15);color:var(--cyan)}
+  .do-hdr{background:rgba(0,184,122,0.10)}      .do-num{background:#009B5E}     .do-ph{background:rgba(0,184,122,0.12);color:var(--green)}
+  .check-hdr{background:rgba(128,64,176,0.12)}  .check-num{background:#8040B0}  .check-ph{background:rgba(128,64,176,0.12);color:#C090F0}
+
+  .aplan{margin-top:12px}
+  .aitem{display:flex;gap:10px;padding:10px 12px;border-radius:7px;border:1px solid var(--border);margin-bottom:6px;background:var(--card);align-items:flex-start}
+  .apri{padding:3px 7px;border-radius:4px;font-size:9px;font-weight:700;flex-shrink:0;margin-top:1px;font-family:var(--mono)}
+  .ph{background:rgba(214,59,59,0.18);color:var(--red);border:1px solid rgba(214,59,59,0.3)}
+  .pm{background:rgba(232,98,10,0.18);color:var(--orange);border:1px solid rgba(232,98,10,0.3)}
+  .pl{background:rgba(0,184,122,0.12);color:var(--green);border:1px solid rgba(0,184,122,0.25)}
+  .atitle{font-size:12px;font-weight:600}
+  .atool{font-size:10px;color:var(--cyan);margin-top:2px;font-family:var(--mono)}
+
+  .errbox{background:rgba(214,59,59,0.08);border:1px solid rgba(214,59,59,0.25);border-radius:8px;padding:12px;color:#E07070;font-size:12px;display:flex;gap:8px}
+
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,0.25);border-top-color:#fff;
+    border-radius:50%;animation:sp 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  .foot{border-top:1px solid var(--border);padding:8px 22px;display:flex;justify-content:space-between;
+    background:var(--card);font-size:10px;color:var(--muted);flex-wrap:wrap;gap:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="logo">
+      <div class="logo-icon">DSL</div>
+      <div>
+        <div class="logo-name">DSL <span>Agent</span></div>
+        <div class="logo-sub">Data Sigma Lean 4.0</div>
+      </div>
+    </div>
+    <div class="badges">
+      <span class="badge b-blue">DMAIC</span>
+      <span class="badge b-green">Lean Six Sigma</span>
+      <span class="badge b-orange">Claude API</span>
+      <span id="keyBadge" class="badge b-red">API ?</span>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- LEFT: form -->
+    <div class="lpanel">
+      <div class="stitle">Problem Domain</div>
+      <div class="dcards" id="dcards"></div>
+
+      <div class="stitle">Live KPIs</div>
+      <div class="kstrip" id="kstrip"></div>
+
+      <div class="stitle">Operator Form</div>
+      <div id="formArea"></div>
+
+      <button class="btn" id="analyzeBtn">⚡ Generate Digital A3 Report</button>
+    </div>
+
+    <!-- RIGHT: report -->
+    <div class="rpanel" id="rpanel">
+      <div class="empty">
+        <div class="empty-icon">📋</div>
+        <p>Fill the operator form on the left and generate a complete DMAIC-based Digital A3 report — root cause, countermeasures, and SPC control plan.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <span>DSL Agent v{{ version }} · AI-powered DMAIC problem-solving</span>
+    <span>Proof of concept · fictitious data for demonstration</span>
+  </div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────
+const DOMAINS=[
+  {id:"quality",icon:"🔍",label:"Quality",sub:"Defects & Non-conformities"},
+  {id:"maintenance",icon:"⚙️",label:"Maintenance",sub:"Downtime & OEE"},
+  {id:"flow",icon:"🔄",label:"Flow",sub:"Lead Time & WIP"},
+];
+const A3_SECTIONS=[
+  {key:"background",num:"§1–2",label:"Background & Current Condition",phase:"PLAN",hdr:"plan-hdr",numc:"plan-num",phc:"plan-ph"},
+  {key:"target",num:"§3–4",label:"Target Condition & CTQ",phase:"PLAN",hdr:"plan-hdr",numc:"plan-num",phc:"plan-ph"},
+  {key:"rootcause",num:"§5",label:"Root Cause Analysis",phase:"DO",hdr:"do-hdr",numc:"do-num",phc:"do-ph"},
+  {key:"countermeasures",num:"§6–7",label:"Countermeasures & Action Plan",phase:"DO",hdr:"do-hdr",numc:"do-num",phc:"do-ph"},
+  {key:"control",num:"§8",label:"Results Monitoring & Follow-up",phase:"CHECK",hdr:"check-hdr",numc:"check-num",phc:"check-ph"},
+];
+const DEFECT_TYPES=["Surface scratches","Dimensional deviation","Assembly defect","Surface roughness","Other"];
+const FAILURE_TYPES=["Bearing failure","Hydraulic leak","Electrical fault","Sensor failure","Belt/conveyor","Other"];
+const BOTTLENECKS=["Cutting","Forming","Assembly","Inspection","Packaging","Logistics"];
+const STATUSES=["Operational","Degraded","Stopped"];
+const SHIFTS=["Morning","Afternoon","Night"];
+
+// ── FORM SCHEMAS ───────────────────────────────────────────────────────────
+const FORMS={
+  quality:[
+    {k:"date",l:"Date",t:"date"},
+    {k:"shift",l:"Shift",sel:SHIFTS,def:"Morning"},
+    {k:"machine",l:"Machine / Line",def:"PL-03"},
+    {k:"status",l:"Machine Status",sel:STATUSES,def:"Degraded"},
+    {k:"target",l:"Production Target",def:"320",t:"number"},
+    {k:"actual",l:"Actual Production",def:"241",t:"number"},
+    {k:"defects",l:"Number of Defects",def:"28",t:"number"},
+    {k:"defectType",l:"Defect Type",sel:DEFECT_TYPES,def:"Surface scratches"},
+    {k:"rework",l:"Rework Rate (%)",def:"8.7",t:"number"},
+    {k:"batchRej",l:"Batch Rejected?",sel:["Yes","No"],def:"Yes"},
+    {k:"daysMaint",l:"Days Since Last Maint.",def:"42",t:"number"},
+    {k:"obs",l:"Operator Observation",def:"Scratches appeared after tool change. Coolant level was low. Same issue last week.",full:true},
+  ],
+  maintenance:[
+    {k:"date",l:"Date",t:"date"},
+    {k:"shift",l:"Shift",sel:SHIFTS,def:"Morning"},
+    {k:"machine",l:"Equipment ID",def:"Motor-L1"},
+    {k:"status",l:"Machine Status",sel:STATUSES,def:"Degraded"},
+    {k:"oeeA",l:"OEE — Availability (%)",def:"71.4",t:"number"},
+    {k:"oeeP",l:"OEE — Performance (%)",def:"79.2",t:"number"},
+    {k:"oeeQ",l:"OEE — Quality (%)",def:"74.2",t:"number"},
+    {k:"downtime",l:"Downtime (min)",def:"47",t:"number"},
+    {k:"failType",l:"Failure Type",sel:FAILURE_TYPES,def:"Bearing failure"},
+    {k:"failFreq",l:"Failure Freq. (this week)",def:"4",t:"number"},
+    {k:"daysMaint",l:"Days Since Last Maint.",def:"42",t:"number"},
+    {k:"spare",l:"Spare Parts Needed",def:"Bearing 6205-2RS"},
+    {k:"obs",l:"Operator Observation",def:"Vibration increasing since last week. Strange noise from motor.",full:true},
+  ],
+  flow:[
+    {k:"date",l:"Date",t:"date"},
+    {k:"shift",l:"Shift",sel:SHIFTS,def:"Morning"},
+    {k:"machine",l:"Production Line",def:"Line A"},
+    {k:"target",l:"Production Target",def:"320",t:"number"},
+    {k:"actual",l:"Actual Production",def:"241",t:"number"},
+    {k:"wip",l:"Current WIP (units)",def:"1240",t:"number"},
+    {k:"leadtime",l:"Lead Time (days)",def:"18.4",t:"number"},
+    {k:"bottleneck",l:"Bottleneck",sel:BOTTLENECKS,def:"Assembly"},
+    {k:"cycleTime",l:"Bottleneck Cycle Time (s)",def:"168",t:"number"},
+    {k:"takt",l:"Takt Time Target (s)",def:"84",t:"number"},
+    {k:"otd",l:"On-Time Delivery (%)",def:"71.3",t:"number"},
+    {k:"obs",l:"Operator Observation",def:"Assembly station always behind. Parts piling up.",full:true},
+  ],
+};
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let domain="quality", fv={}, report=null, kpis=null, loading=false, openSec="background";
+
+// ── HELPERS ────────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const num=(k,d)=>{const v=parseFloat(fv[k]); return isNaN(v)?d:v;};
+const esc=s=>String(s==null?"":s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+function seedDefaults(){
+  fv={};
+  FORMS[domain].forEach(f=>{ if(f.def!==undefined) fv[f.k]=f.def; });
+}
+
+// ── RENDER: domain cards ─────────────────────────────────────────────────────
+function renderDomains(){
+  $("dcards").innerHTML=DOMAINS.map(d=>`
+    <div class="dcard ${d.id===domain?'active':''}" data-d="${d.id}">
+      <div class="di">${d.icon}</div>
+      <div class="dt">${d.label}</div>
+      <div class="ds">${d.sub}</div>
+    </div>`).join("");
+  document.querySelectorAll(".dcard").forEach(el=>{
+    el.onclick=()=>{ domain=el.dataset.d; seedDefaults(); renderAll(); };
+  });
+}
+
+// ── RENDER: live KPIs ────────────────────────────────────────────────────────
+function renderKpis(){
+  let html="";
+  if(domain==="quality"){
+    const a=num("actual",241),d=num("defects",28);
+    const dr=a>0?(d/a*100).toFixed(1):"—";
+    const dpmo=a>0?Math.round(d/a*1e6).toLocaleString():"—";
+    const fpy=a>0?((a-d)/a*100).toFixed(1):"—";
+    html=`
+      <div class="kbox"><div class="kv red">${dr}%</div><div class="kn">DEFECT RATE</div></div>
+      <div class="kbox"><div class="kv orange">${dpmo}</div><div class="kn">DPMO</div></div>
+      <div class="kbox"><div class="kv yellow">${fpy}%</div><div class="kn">FIRST PASS YIELD</div></div>`;
+  } else if(domain==="maintenance"){
+    const A=num("oeeA",71.4),P=num("oeeP",79.2),Q=num("oeeQ",74.2);
+    const oee=(A/100*P/100*Q/100*100).toFixed(1);
+    html=`
+      <div class="kbox"><div class="kv red">${oee}%</div><div class="kn">OEE</div></div>
+      <div class="kbox"><div class="kv orange">${A}%</div><div class="kn">AVAILABILITY</div></div>
+      <div class="kbox"><div class="kv yellow">${P}%</div><div class="kn">PERFORMANCE</div></div>`;
+  } else {
+    const tgt=num("target",320),a=num("actual",241);
+    const ach=tgt>0?(a/tgt*100).toFixed(1):"—";
+    html=`
+      <div class="kbox"><div class="kv red">${num("leadtime",18.4)}d</div><div class="kn">LEAD TIME</div></div>
+      <div class="kbox"><div class="kv orange">${num("wip",1240).toLocaleString()}</div><div class="kn">WIP UNITS</div></div>
+      <div class="kbox"><div class="kv yellow">${ach}%</div><div class="kn">ACHIEVEMENT</div></div>`;
+  }
+  $("kstrip").innerHTML=html;
+}
+
+// ── RENDER: form ─────────────────────────────────────────────────────────────
+function renderForm(){
+  const fields=FORMS[domain];
+  $("formArea").innerHTML=`<div class="fgrid">`+fields.map(f=>{
+    const val=fv[f.k]!==undefined?fv[f.k]:(f.def||"");
+    if(f.sel){
+      return `<div class="fg"><div class="fl">${f.l}</div>
+        <select class="fs" data-k="${f.k}">${f.sel.map(o=>`<option ${o===val?'selected':''}>${o}</option>`).join("")}</select></div>`;
+    }
+    if(f.full){
+      return `<div class="fg full"><div class="fl">${f.l}</div>
+        <textarea class="ft" data-k="${f.k}">${esc(val)}</textarea></div>`;
+    }
+    return `<div class="fg"><div class="fl">${f.l}</div>
+      <input class="fi" type="${f.t||'text'}" ${f.t==='number'?'step="0.1"':''} value="${esc(val)}" data-k="${f.k}"/></div>`;
+  }).join("")+`</div>`;
+
+  $("formArea").querySelectorAll("[data-k]").forEach(el=>{
+    el.oninput=el.onchange=e=>{ fv[e.target.dataset.k]=e.target.value; renderKpis(); };
+  });
+}
+
+// ── RENDER: report ───────────────────────────────────────────────────────────
+function renderReport(){
+  const p=$("rpanel");
+  if(loading){
+    p.innerHTML=`<div class="empty"><div><span class="spin"></span></div>
+      <p>DSL Agent is analyzing the production data and building the DMAIC Digital A3 report…</p></div>`;
+    return;
+  }
+  if(!report){
+    p.innerHTML=`<div class="empty"><div class="empty-icon">📋</div>
+      <p>Fill the operator form on the left and generate a complete DMAIC-based Digital A3 report — root cause, countermeasures, and SPC control plan.</p></div>`;
+    return;
+  }
+  const dpmo=typeof report.dpmo==="number"?report.dpmo.toLocaleString():(report.dpmo||"—");
+  let html=`<div class="a3-report">
+    <div class="a3-hdr">
+      <div class="a3-hdr-top">
+        <div>
+          <h2>${esc(report.problem_title||"Digital A3 Report")}</h2>
+          <p>${esc(report.problem_summary||"")}</p>
+        </div>
+        <div class="sigma-badge">
+          <div class="sigma-val">${esc(report.sigma_level||"—")}</div>
+          <div class="sigma-lbl">Sigma Level</div>
+        </div>
+      </div>
+      <div class="a3-meta">
+        <div class="a3-meta-item"><div class="ml">Domain</div><div class="mv">${esc(report.domain||"—")}</div></div>
+        <div class="a3-meta-item"><div class="ml">DPMO</div><div class="mv">${dpmo}</div></div>
+        <div class="a3-meta-item"><div class="ml">Date</div><div class="mv">${new Date().toLocaleDateString()}</div></div>
+        <div class="a3-meta-item"><div class="ml">Status</div><div class="mv">DRAFT</div></div>
+      </div>
+    </div>`;
+
+  A3_SECTIONS.forEach(s=>{
+    const isOpen=openSec===s.key;
+    html+=`<div class="a3-section">
+      <div class="a3-sec-hdr ${s.hdr}" data-sec="${s.key}">
+        <div class="a3-sec-num ${s.numc}">${s.num}</div>
+        <div class="a3-sec-label">${s.label}</div>
+        <div class="a3-sec-phase ${s.phc}">${s.phase}</div>
+        <div class="a3-chev ${isOpen?'open':''}">▼</div>
+      </div>
+      ${isOpen?`<div class="a3-sec-body">${esc(report[s.key]||"—")}</div>`:""}
+    </div>`;
+  });
+
+  // action plan
+  if(Array.isArray(report.actions)&&report.actions.length){
+    html+=`<div class="stitle" style="margin-top:16px">Prioritized Action Plan</div><div class="aplan">`;
+    report.actions.forEach(a=>{
+      const pri=(a.priority||"MEDIUM").toUpperCase();
+      const cls=pri==="HIGH"?"ph":pri==="LOW"?"pl":"pm";
+      html+=`<div class="aitem">
+        <span class="apri ${cls}">${pri}</span>
+        <div><div class="atitle">${esc(a.action||"—")}</div><div class="atool">🔧 ${esc(a.tool||"—")}</div></div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  html+=`<button class="btn ghost" id="pdfBtn">⬇️ Download A3 Report (PDF)</button></div>`;
+  p.innerHTML=html;
+
+  p.querySelectorAll(".a3-sec-hdr").forEach(el=>{
+    el.onclick=()=>{ const k=el.dataset.sec; openSec=openSec===k?null:k; renderReport(); };
+  });
+  $("pdfBtn").onclick=downloadPdf;
+}
+
+function renderAll(){ renderDomains(); renderKpis(); renderForm(); renderReport(); }
+
+// ── ACTIONS ──────────────────────────────────────────────────────────────────
+async function analyze(){
+  loading=true; report=null; updateBtn(); renderReport();
+  try{
+    const res=await fetch("/api/analyze",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({domain, form:fv}),
+    });
+    const data=await res.json();
+    if(!data.ok){ throw new Error(data.error||"Unknown error"); }
+    report=data.report; kpis=data.kpis; openSec="background";
+  }catch(e){
+    $("rpanel").innerHTML=`<div class="errbox">⚠️ Analysis failed: ${esc(e.message)}</div>`;
+    loading=false; updateBtn(); return;
+  }
+  loading=false; updateBtn(); renderReport();
+}
+
+async function downloadPdf(){
+  if(!report) return;
+  const btn=$("pdfBtn"); btn.disabled=true; btn.textContent="Generating PDF…";
+  try{
+    const res=await fetch("/api/a3-pdf",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({report, kpis}),
+    });
+    if(!res.ok){ const j=await res.json().catch(()=>({})); throw new Error(j.error||"PDF error"); }
+    const blob=await res.blob();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url; a.download=`A3_${(report.problem_title||"report").replace(/[^a-z0-9]+/gi,"_")}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }catch(e){ alert("PDF generation failed: "+e.message); }
+  finally{ btn.disabled=false; btn.textContent="⬇️ Download A3 Report (PDF)"; }
+}
+
+function updateBtn(){
+  const b=$("analyzeBtn");
+  b.disabled=loading;
+  b.innerHTML=loading?`<span class="spin"></span>Analyzing…`:`⚡ Generate Digital A3 Report`;
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+async function checkKey(){
+  try{
+    const r=await fetch("/api/health"); const d=await r.json();
+    const b=$("keyBadge");
+    if(d.api_key_configured){ b.className="badge b-green"; b.textContent="API ✓"; }
+    else{ b.className="badge b-red"; b.textContent="API key missing"; }
+  }catch(e){ /* ignore */ }
+}
+
+seedDefaults();
+renderAll();
+updateBtn();
+checkKey();
+$("analyzeBtn").onclick=analyze;
+</script>
+</body>
+</html>
